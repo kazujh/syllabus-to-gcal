@@ -102,20 +102,17 @@ function addEventsToCalendar(events) {
 
                     if (event.isRecurring) {
                         // Handle recurring event
-                        calendarEvent = {
-                            ...calendarEvent,
-                            start: {
-                                dateTime: getNextOccurrence(event.recurringDays, event.startTime).toISOString(),
-                                timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
-                            },
-                            end: {
-                                dateTime: new Date(getNextOccurrence(event.recurringDays, event.startTime).getTime() + event.duration).toISOString(),
-                                timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
-                            },
-                            recurrence: [
-                                `RRULE:FREQ=WEEKLY;BYDAY=${getDayAbbreviations(event.recurringDays)};UNTIL=${event.until.replace(/-/g, '')}`
-                            ]
+                        calendarEvent.start = {
+                            dateTime: getNextOccurrence(event.recurringDays, event.startTime).toISOString(),
+                            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
                         };
+                        calendarEvent.end = {
+                            dateTime: new Date(getNextOccurrence(event.recurringDays, event.startTime).getTime() + event.duration).toISOString(),
+                            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+                        };
+                        calendarEvent.recurrence = [
+                            `RRULE:FREQ=WEEKLY;BYDAY=${getDayAbbreviations(event.recurringDays)};UNTIL=${event.until.replace(/-/g, '')}T235959Z`
+                        ];
                     } else if (event.isAllDay) {
                         // Handle all-day event
                         const eventDate = new Date(event.date);
