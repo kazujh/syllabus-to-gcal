@@ -40,8 +40,8 @@ function scrapeDatesAndClassName() {
             matchFound = true;
             type = 'Homework';
             if (hwMatch[2]) {
-                details = `${hwMatch[1]} ${hwMatch[2]}`;
-                type = `Homework ${hwMatch[2]} Due`;
+                details = `Homework ${hwMatch[2]}`;
+                type = `Homework Deadline`;
             }
         }
 
@@ -76,16 +76,59 @@ function scrapeDatesAndClassName() {
         }
 
         if (matchFound) {
+            let eventDate = date.date();
+            let isAllDay = false;
+            let duration = 3600000; // default 1 hour in milliseconds
+            
+            // Check if a specific time was found in the parsed date
+            const hasSpecificTime = date.start.isCertain('hour') && date.start.isCertain('minute');
+            
+            // Check if this is a time range (has both start and end times)
+            const hasTimeRange = date.end !== null && 
+                               date.end.isCertain('hour') && 
+                               date.end.isCertain('minute');
+
+            if (hasTimeRange) {
+                // Calculate duration from the time range
+                duration = date.end.date().getTime() - eventDate.getTime();
+            } else if (!hasSpecificTime) {
+                // Only set default times if no specific time was found
+                switch(type) {
+                    case 'Lecture':
+                        eventDate.setHours(10, 0, 0, 0);
+                        duration = 3600000; // 1 hour
+                        break;
+                    case 'Discussion':
+                        eventDate.setHours(14, 0, 0, 0);
+                        duration = 3600000; // 1 hour
+                        break;
+                    case 'Lab':
+                        eventDate.setHours(13, 0, 0, 0);
+                        duration = 10800000; // 3 hours
+                        break;
+                    case 'Midterm':
+                    case 'Final':
+                        isAllDay = true;
+                        break;
+                    default:
+                        // For homework and other types
+                        eventDate.setHours(23, 59, 0, 0);
+                        duration = 0; // No duration for deadlines
+                }
+            }
+
             let summary = className ? `${className} - ` : '';
             summary += details ? `${type}: ${details}` : type;
             
             events.push({
-                date: date.date().toISOString(),
+                date: eventDate.toISOString(),
                 type: type,
                 details: details,
                 summary: summary,
                 contextSnippet: contextSnippet,
-                className: className
+                className: className,
+                isAllDay: isAllDay,
+                duration: duration // Add duration to the event object
             });
         }
     });

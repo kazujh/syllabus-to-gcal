@@ -83,22 +83,34 @@ function addEventsToCalendar(events) {
   let failCount = 0;
 
   events.forEach(event => {
-    // Create a more detailed calendar event
-    const calendarEvent = {
+    let calendarEvent = {
       summary: event.summary,
       description: `Type: ${event.type}\n` +
                   `${event.details ? `Details: ${event.details}\n` : ''}` +
                   `Course: ${event.courseName || 'N/A'}\n\n` +
                   `Context from syllabus:\n${event.contextSnippet}`,
-      start: {
-        dateTime: new Date(event.date).toISOString()
-      },
-      end: {
-        dateTime: new Date(new Date(event.date).getTime() + 3600000).toISOString()
-      },
-      // Add color coding based on event type
       colorId: getEventColorId(event.type)
     };
+
+    if (event.isAllDay) {
+      // For all-day events
+      const eventDate = new Date(event.date);
+      calendarEvent.start = {
+        date: eventDate.toISOString().split('T')[0]
+      };
+      calendarEvent.end = {
+        date: new Date(eventDate.getTime() + 24*60*60*1000).toISOString().split('T')[0]
+      };
+    } else {
+      // For time-specific events
+      const startDate = new Date(event.date);
+      calendarEvent.start = {
+        dateTime: startDate.toISOString()
+      };
+      calendarEvent.end = {
+        dateTime: new Date(startDate.getTime() + event.duration).toISOString()
+      };
+    }
     
     console.log('Sending calendar event:', calendarEvent);
     
