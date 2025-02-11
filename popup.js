@@ -19,10 +19,12 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     
+    // Create a more detailed display of events
     container.innerHTML = events.map(event => `
       <div class="event">
-        <strong>${event.type}</strong><br>
+        <strong>${event.summary}</strong><br>
         Date: ${new Date(event.date).toLocaleString()}<br>
+        ${event.details ? `Details: ${event.details}<br>` : ''}
         Context: ${event.contextSnippet}
       </div>
     `).join('');
@@ -81,15 +83,21 @@ function addEventsToCalendar(events) {
   let failCount = 0;
 
   events.forEach(event => {
+    // Create a more detailed calendar event
     const calendarEvent = {
-      summary: event.type,
-      description: event.contextSnippet,
+      summary: event.summary,
+      description: `Type: ${event.type}\n` +
+                  `${event.details ? `Details: ${event.details}\n` : ''}` +
+                  `Course: ${event.courseName || 'N/A'}\n\n` +
+                  `Context from syllabus:\n${event.contextSnippet}`,
       start: {
         dateTime: new Date(event.date).toISOString()
       },
       end: {
         dateTime: new Date(new Date(event.date).getTime() + 3600000).toISOString()
-      }
+      },
+      // Add color coding based on event type
+      colorId: getEventColorId(event.type)
     };
     
     console.log('Sending calendar event:', calendarEvent);
@@ -124,3 +132,33 @@ function addEventsToCalendar(events) {
     });
   });
 }
+
+// Helper function to assign color IDs based on event type
+function getEventColorId(eventType) {
+  // Google Calendar color IDs (1-11)
+  const colorMap = {
+    'Assignment': '5',  // Yellow
+    'Exam': '11',      // Red
+    'Lecture': '9',    // Blue
+    'Lab': '2',        // Green
+    'Event': '1'       // Default (Lavender)
+  };
+  
+  return colorMap[eventType] || '1';
+}
+
+// Optional: Add CSS to style the events in the popup
+const style = document.createElement('style');
+style.textContent = `
+    .event {
+        margin: 10px 0;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        background-color: #f9f9f9;
+    }
+    .event strong {
+        color: #333;
+    }
+`;
+document.head.appendChild(style);
