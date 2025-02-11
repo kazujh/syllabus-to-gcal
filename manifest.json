@@ -3,6 +3,7 @@
     "name": "Syllabus to Calendar",
     "version": "1.0",
     "description": "add your class schedule to gcal in one click",
+    "key":"MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAkhG3gi5xZpIFxhKmD6GIteiCYnaV8jxtoGEDnWcVyGL9wQuD12gG1BTGnbee9b7BcxFaMZK+idEEUEGBEN/I/a7+YJk15r0fAWYKz1oh61N+Ld1ah+HxupSXrmEmezxFkK4gwGtALtor8MsxmlhEPmaoff4rEf+e///9VSmcBAQ2oHUMp6v6V/z5LJ95hMB5OicpbYx7pEblcvTjbC2fyqmIc+SDvwdQjS2CXzwzodm5AFDrbAOTj/jbe6bZediVV1V+VJ3LtA18nUO/getmLuK5dx8A9QB3Bn0sFpdo4pE0xwRvjJuGlCKlu4n4BxyQxoybfMgaKzL1X7X2e1ABEwIDAQAB",
     "permissions": [
       "activeTab",
       "storage",
@@ -26,5 +27,9 @@
     },
     "action": {
       "default_popup": "popup.html"
+    },
+    "oauth2": {
+      "client_id": "395341068349-s36q8cdunerk75tof73c6rhmdfa248v5.apps.googleusercontent.com",
+      "scopes": ["https://www.googleapis.com/auth/calendar.events"]
     }
 }

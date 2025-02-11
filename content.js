@@ -3,46 +3,61 @@
 console.log('window.chrono:', window.chrono);
 console.log('Type of window.chrono.parse:', typeof window.chrono.parse);
 
-const pageText = document.body.innerText;
-const results = window.chrono.parse(pageText);
-console.log('Parsed results:', results);
+// Use chrono to find dates in the page content
+function scrapeDates() {
+    // Get all text content from the page
+    const pageText = document.body.innerText;
+    
+    // Use chrono to parse dates from the text
+    const parsedDates = chrono.parse(pageText);
+    
+    // Transform the parsed dates into our event format
+    const events = parsedDates.map(result => {
+        // Get the surrounding context (about 100 characters before and after the date)
+        const start = Math.max(0, result.index - 100);
+        const end = Math.min(pageText.length, result.index + result.text.length + 100);
+        const contextSnippet = pageText.substring(start, end);
+        
+        // Try to determine the event type based on nearby keywords
+        let type = 'Event';
+        const lowerContext = contextSnippet.toLowerCase();
+        if (lowerContext.includes('Midterm')) {
+            type = 'Midterm';
+        } else if (lowerContext.includes('Final')) {
+            type = 'Final';
+        } else if (lowerContext.includes('homework') || lowerContext.includes('assignment')) {
+            type = 'Assignment Due';
+        } else if (lowerContext.includes('lecture')) {
+            type = 'Lecture';
+        } else if (lowerContext.includes('lab')) {
+            type = 'Lab';
+        } else if (lowerContext.includes('discussion')) {
+            type = 'Discussion';
+        }
+        
+        return {
+            date: result.date().toISOString(),
+            type: type,
+            contextSnippet: contextSnippet.trim()
+        };
+    });
+    
+    // Save the extracted events to Chrome's local storage
+    chrome.storage.local.set({ scrapedEvents: events }, () => {
+        console.log("Scraped events saved:", events);
+    });
 
-// A simple function to classify the event based on nearby keywords.
-function classifyEvent(textSegment) {
-  const lower = textSegment.toLowerCase();
-  if (lower.includes("lecture")) return "Lecture";
-  if (lower.includes("midterm")) return "Midterm Exam";
-  if (lower.includes("final")) return "Final Exam";
-  if (lower.includes("homework") || lower.includes("assignment")) return "Homework Deadline";
-  if (lower.includes("office hours")) return "Office Hours";
-  if (lower.includes("lab")) return "Lab Session";
-  if (lower.includes("discussion")) return "Discussion";
-  return "General Event";
+    // Send a message to the popup (if open) about new events
+    chrome.runtime.sendMessage({ scrapedEvents: events });
 }
 
-// Prepare an array of events.
-const events = results.map(result => {
-  // The parsed date as a Date object.
-  const eventDate = result.start.date();
+// Run the scraper when the page loads
+scrapeDates();
 
-  // Extract a snippet around the matched text (adjust window as needed).
-  const snippetStart = Math.max(0, result.index - 50);
-  const snippetEnd = Math.min(pageText.length, result.index + 50);
-  const snippet = pageText.substring(snippetStart, snippetEnd);
-
-  return {
-    type: classifyEvent(snippet),
-    date: eventDate.toISOString(),
-    originalText: result.text,
-    contextSnippet: snippet
-  };sdfsd
+// Listen for messages from the popup
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === "scrape") {
+        scrapeDates();
+        sendResponse({success: true});
+    }
 });
-
-
-// Save the extracted events to Chrome's local storage.
-chrome.storage.local.set({ scrapedEvents: events }, () => {
-  console.log("Scraped events saved:", events);
-});
-
-// Optionally, send a message to your popup (if open) about new events.
-chrome.runtime.sendMessage({ scrapedEvents: events });

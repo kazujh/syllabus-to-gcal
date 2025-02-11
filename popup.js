@@ -1,84 +1,126 @@
 // popup.js
 
-// Global variables for Google API
-const CLIENT_ID = 'aomiinalljmameigojblanjihcenaigb.apps.googleusercontent.com';
-const API_KEY = 'AIzaSyAtFrvCCHGs8q_fHaYSCb2L3nQSyXAxPzc';
-const DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"];
+// Replace with your actual Chrome Extension OAuth Client ID.
+const CLIENT_ID = '395341068349-s36q8cdunerk75tof73c6rhmdfa248v5.apps.googleusercontent.com';
+// Scope for managing Calendar events.
 const SCOPES = "https://www.googleapis.com/auth/calendar.events";
 
-// Retrieve and display events when the popup opens
+let accessToken = null;
+
+// When the popup loads, display the stored events.
 document.addEventListener('DOMContentLoaded', () => {
+  // Load and display any scraped events
   chrome.storage.local.get('scrapedEvents', (data) => {
     const events = data.scrapedEvents || [];
     const container = document.getElementById('eventsContainer');
+    
     if (events.length === 0) {
-      container.innerHTML = "<p>No events found.</p>";
+      container.innerHTML = 'No events found. Make sure you\'re on a page with dates.';
       return;
     }
-    container.innerHTML = "";
-    events.forEach((event) => {
-      const div = document.createElement('div');
-      div.className = "event";
-      div.innerHTML = `<strong>${event.type}</strong>: ${event.originalText}<br><em>${new Date(event.date).toLocaleString()}</em>`;
-      container.appendChild(div);
+    
+    container.innerHTML = events.map(event => `
+      <div class="event">
+        <strong>${event.type}</strong><br>
+        Date: ${new Date(event.date).toLocaleString()}<br>
+        Context: ${event.contextSnippet}
+      </div>
+    `).join('');
+  });
+});
+
+// Function to initiate the OAuth flow using chrome.identity.launchWebAuthFlow.
+function getAccessToken(interactive, callback) {
+  chrome.identity.getAuthToken({ 
+    interactive: interactive
+  }, function(token) {
+    if (chrome.runtime.lastError) {
+      callback(chrome.runtime.lastError);
+      return;
+    }
+    accessToken = 'Bearer ' + token;
+    callback(null, token);
+  });
+}
+
+// When the user clicks the "Add Events to Google Calendar" button,
+// start the OAuth flow.
+document.getElementById("addToCalendar").addEventListener("click", () => {
+  console.log("Add to Calendar button clicked");
+  chrome.storage.local.get('scrapedEvents', (data) => {
+    console.log("Retrieved storage data:", data);
+    if (!data.scrapedEvents || data.scrapedEvents.length === 0) {
+      console.log("No events found in storage");
+      alert('No events found to add to calendar');
+      return;
+    }
+
+    getAccessToken(true, (err, token) => {
+      if (err) {
+        console.error("Error obtaining token:", err);
+        alert("Error obtaining token: " + err.message);
+      } else {
+        console.log("Access token acquired, proceeding to add events");
+        addEventsToCalendar(data.scrapedEvents);
+      }
     });
   });
 });
 
-// When user clicks the button, start Google API authentication
-document.getElementById("addToCalendar").addEventListener("click", () => {
-  if (typeof gapi === 'undefined') {
-    console.error("gapi is not loaded. Please ensure gapi.js is included in your popup.html.");
+// Use the access token to create events in the user's primary calendar.
+function addEventsToCalendar(events) {
+  console.log('Starting to create events:', events);
+  
+  if (!events || events.length === 0) {
+    console.log('No events provided to addEventsToCalendar');
+    alert('No events found to add to calendar');
     return;
   }
-  gapi.load('client:auth2', initClient);
-});
 
-function initClient() {
-  gapi.client.init({
-    apiKey: API_KEY,
-    clientId: CLIENT_ID,
-    discoveryDocs: DISCOVERY_DOCS,
-    scope: SCOPES
-  }).then(() => {
-    // Check if already signed in.
-    if (!gapi.auth2.getAuthInstance().isSignedIn.get()) {
-      return gapi.auth2.getAuthInstance().signIn();
-    }
-  }).then(() => {
-    addEventsToCalendar();
-  }).catch(error => {
-    console.error("Error during authentication", error);
-  });
-}
+  let successCount = 0;
+  let failCount = 0;
 
-function addEventsToCalendar() {
-  // Retrieve events from storage.
-  chrome.storage.local.get('scrapedEvents', (data) => {
-    const events = data.scrapedEvents || [];
-    events.forEach(event => {
-      // Create a basic event object.
-      const calendarEvent = {
-        'summary': event.type,
-        'description': event.contextSnippet,
-        'start': {
-          'dateTime': new Date(event.date).toISOString()
-        },
-        // For simplicity, set the end time to one hour later.
-        'end': {
-          'dateTime': new Date(new Date(event.date).getTime() + 3600000).toISOString()
-        }
-      };
-
-      // Insert the event into the user's primary calendar.
-      gapi.client.calendar.events.insert({
-        'calendarId': 'primary',
-        'resource': calendarEvent
-      }).then(response => {
-        console.log('Event created: ', response.result.htmlLink);
-      }).catch(error => {
-        console.error("Error creating event", error);
-      });
+  events.forEach(event => {
+    const calendarEvent = {
+      summary: event.type,
+      description: event.contextSnippet,
+      start: {
+        dateTime: new Date(event.date).toISOString()
+      },
+      end: {
+        dateTime: new Date(new Date(event.date).getTime() + 3600000).toISOString()
+      }
+    };
+    
+    console.log('Sending calendar event:', calendarEvent);
+    
+    fetch("https://www.googleapis.com/calendar/v3/calendars/primary/events", {
+      method: "POST",
+      headers: {
+        "Authorization": accessToken,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(calendarEvent)
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then(data => {
+      console.log("Event created successfully:", data);
+      successCount++;
+      if (successCount + failCount === events.length) {
+        alert(`Successfully created ${successCount} events. Failed: ${failCount}`);
+      }
+    })
+    .catch(error => {
+      console.error("Error creating event:", error);
+      failCount++;
+      if (successCount + failCount === events.length) {
+        alert(`Successfully created ${successCount} events. Failed: ${failCount}`);
+      }
     });
   });
 }
