@@ -95,25 +95,29 @@ function scrapeDatesAndClassName() {
                 // Only set default times if no specific time was found
                 switch(type) {
                     case 'Lecture':
-                        eventDate.setHours(10, 0, 0, 0);
+                        eventDate.setHours(12, 0, 0, 0);
                         duration = 3600000; // 1 hour
                         break;
                     case 'Discussion':
-                        eventDate.setHours(14, 0, 0, 0);
+                        eventDate.setHours(12, 0, 0, 0);
                         duration = 3600000; // 1 hour
                         break;
                     case 'Lab':
-                        eventDate.setHours(13, 0, 0, 0);
-                        duration = 10800000; // 3 hours
+                        eventDate.setHours(12, 0, 0, 0);
+                        duration = 3600000; // 1 hour
                         break;
                     case 'Midterm':
+                        eventDate.setHours(12, 0, 0, 0);
+                        duration = 3600000; // 1 hour
+                        break;
                     case 'Final':
-                        isAllDay = true;
+                        eventDate.setHours(12, 0, 0, 0);
+                        duration = 3600000; // 1 hour
                         break;
                     default:
                         // For homework and other types
                         eventDate.setHours(23, 59, 0, 0);
-                        duration = 0; // No duration for deadlines
+                        duration = 600000; // No duration for deadlines
                 }
             }
 
