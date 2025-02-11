@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Syllabus Date Scraper</title>
+    <style>
+      body { font-family: Arial, sans-serif; padding: 10px; }
+      .event { border-bottom: 1px solid #ccc; padding: 5px 0; }
+      .event:last-child { border-bottom: none; }
+    </style>
+  </head>
+  <body>
+    <h3>Detected Events</h3>
+    <div id="eventsContainer">Loading events...</div>
+    <button id="addToCalendar">Add Events to Google Calendar</button>
+    <script src="libs/gapi.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>

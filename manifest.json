@@ -1,0 +1,30 @@
+{
+    "manifest_version": 3,
+    "name": "Syllabus to Calendar",
+    "version": "1.0",
+    "description": "add your class schedule to gcal in one click",
+    "permissions": [
+      "activeTab",
+      "storage",
+      "identity"
+    ],
+    "host_permissions": [
+      "*://*/*",
+      "https://www.googleapis.com/*"
+    ],
+    "background": {
+      "service_worker": "background.js"
+    },
+    "content_scripts": [
+      {
+        "matches": ["<all_urls>"],
+        "js": ["libs/chrono.bundle.js","content.js"]
+      }
+    ],
+    "content_security_policy": {
+        "extension_pages": "script-src 'self'; object-src 'self'"
+    },
+    "action": {
+      "default_popup": "popup.html"
+    }
+}
