@@ -152,6 +152,8 @@ function scrapeDatesAndClassName() {
                     type = 'Discussion';
                 } else if (lowerContext.includes('lab')) {
                     type = 'Lab';
+                } else if (lowerContext.includes('office hours')) {
+                    type = 'Office Hours';
                 }
 
                 let summary = className ? `${className} - ` : '';
@@ -224,8 +226,19 @@ function scrapeDatesAndClassName() {
                             details = `Lab ${labMatch[1]}`;
                         }
                         matchFound = true;
+                    } else if (lowerContext.includes('project')) {
+                        type = 'Project';
+                        const projectPattern = /project\s*(\d+)?/i;
+                        let projectMatch = projectPattern.exec(contextSnippet);
+                        if (projectMatch && projectMatch[1]) {
+                            details = `Project ${projectMatch[1]}`;
+                        }
+                        matchFound = true;
                     } else if (lowerContext.includes('discussion')) {
                         type = 'Discussion';
+                        matchFound = true;
+                    } else if (lowerContext.includes('office hours')) {
+                        type = 'Office Hours';
                         matchFound = true;
                     }
                 }
@@ -266,6 +279,10 @@ function scrapeDatesAndClassName() {
                                 duration = 3600000; // 1 hour
                                 break;
                             case 'Final':
+                                eventDate.setHours(12, 0, 0, 0);
+                                duration = 3600000; // 1 hour
+                                break;
+                            case 'Office Hours':
                                 eventDate.setHours(12, 0, 0, 0);
                                 duration = 3600000; // 1 hour
                                 break;
